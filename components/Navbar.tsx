@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Music, User, LogOut, Settings } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase/client';
+import { AuthModal } from '@/components/AuthModal';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -96,9 +97,7 @@ export function Navbar() {
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-            <Button onClick={() => login()} variant="premium" size="sm">
-              Login Demo
-            </Button>
+            <AuthModal />
           )}
         </div>
       </div>

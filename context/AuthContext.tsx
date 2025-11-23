@@ -7,6 +7,8 @@ import { User } from '@supabase/supabase-js';
 interface AuthContextType {
   user: User | null;
   login: () => void;
+  signInWithEmail: (email: string, password: string) => Promise<void>;
+  signUpWithEmail: (email: string, password: string, username: string, displayName: string) => Promise<void>;
   logout: () => void;
   isLoading: boolean;
 }
@@ -37,9 +39,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const login = async () => {
-    // For demo purposes, we'll use GitHub or just a simple email sign in if configured
-    // But since we don't have a UI for email/pass yet, let's assume we want to trigger OAuth
-    // Or we can just redirect to Supabase hosted UI
+    // Legacy OAuth login - keeping for reference or future use
     await supabase.auth.signInWithOAuth({
       provider: 'github',
       options: {
@@ -48,12 +48,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
   };
 
+  const signInWithEmail = async (email: string, password: string) => {
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    if (error) throw error;
+  };
+
+  const signUpWithEmail = async (email: string, password: string, username: string, displayName: string) => {
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          username,
+          full_name: displayName,
+          avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${username}`, // Default avatar
+        },
+      },
+    });
+    if (error) throw error;
+  };
+
   const logout = async () => {
     await supabase.auth.signOut();
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, isLoading }}>
+    <AuthContext.Provider value={{ user, login, logout, signInWithEmail, signUpWithEmail, isLoading }}>
       {children}
     </AuthContext.Provider>
   );
