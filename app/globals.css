@@ -1,26 +1,58 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Base Colors - Premium Dark Mode Default */
+  --background: 0 0% 3%; /* Very dark grey, almost black */
+  --foreground: 0 0% 98%;
+
+  /* Primary Brand Color - Electric Violet */
+  --primary: 265 89% 66%;
+  --primary-foreground: 0 0% 100%;
+
+  /* Secondary - Vibrant Cyan */
+  --secondary: 190 90% 50%;
+  --secondary-foreground: 0 0% 3%;
+
+  /* Accents */
+  --accent: 265 89% 66%; /* Same as primary for now, can diverge */
+  --accent-foreground: 0 0% 100%;
+
+  /* UI Elements */
+  --card: 0 0% 7%;
+  --card-foreground: 0 0% 98%;
+  
+  --popover: 0 0% 7%;
+  --popover-foreground: 0 0% 98%;
+
+  --muted: 0 0% 15%;
+  --muted-foreground: 0 0% 65%;
+
+  --border: 0 0% 15%;
+  --input: 0 0% 15%;
+  --ring: 265 89% 66%;
+
+  /* Radius */
+  --radius: 0.75rem;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer utilities {
+  .glass {
+    @apply bg-white/5 backdrop-blur-lg border border-white/10;
+  }
+  
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-[hsl(var(--primary))] to-[hsl(var(--secondary))];
+  }
 }
