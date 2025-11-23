@@ -1,11 +1,12 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { User, backend } from '@/lib/mock-backend';
+import { supabase } from '@/lib/supabase/client';
+import { User } from '@supabase/supabase-js';
 
 interface AuthContextType {
   user: User | null;
-  login: (username: string) => void;
+  login: () => void;
   logout: () => void;
   isLoading: boolean;
 }
@@ -17,20 +18,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Check for existing session on mount
-    const currentUser = backend.getCurrentUser();
-    setUser(currentUser);
-    setIsLoading(false);
+    // Check active session
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setUser(session?.user ?? null);
+      setIsLoading(false);
+    };
+
+    checkSession();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+      setIsLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
-  const login = (username: string) => {
-    const user = backend.login(username);
-    setUser(user);
+  const login = async () => {
+    // For demo purposes, we'll use GitHub or just a simple email sign in if configured
+    // But since we don't have a UI for email/pass yet, let's assume we want to trigger OAuth
+    // Or we can just redirect to Supabase hosted UI
+    await supabase.auth.signInWithOAuth({
+      provider: 'github',
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+      },
+    });
   };
 
-  const logout = () => {
-    backend.logout();
-    setUser(null);
+  const logout = async () => {
+    await supabase.auth.signOut();
   };
 
   return (

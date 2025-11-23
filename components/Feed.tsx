@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { Post as PostComponent } from './Post';
 import { Post } from '@/lib/mock-backend';
 import { Loader2 } from 'lucide-react';
+import { supabase } from '@/lib/supabase/client';
 
 export function Feed() {
   const [posts, setPosts] = useState<Post[]>([]);
@@ -12,15 +13,19 @@ export function Feed() {
   useEffect(() => {
     async function fetchPosts() {
       try {
-        const res = await fetch('/api/graphql', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ query: '{ getFeed { id authorId type content mediaUrl createdAt likes isPrivate } }' }),
-        });
-        const json = await res.json();
-        if (json.data && json.data.feed) {
-          setPosts(json.data.feed);
-        }
+        const { data, error } = await supabase
+          .from('posts')
+          .select(`
+            *,
+            author:profiles(username, display_name, avatar_url)
+          `)
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+        
+        // Transform data to match Post type if needed, or update Post type
+        // For now, assuming the join returns author object correctly
+        setPosts(data as any);
       } catch (error) {
         console.error('Failed to fetch posts:', error);
       } finally {

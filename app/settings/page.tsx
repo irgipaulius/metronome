@@ -8,6 +8,7 @@ import { Label } from '@radix-ui/react-label'; // Need to install or create Labe
 import { useState, useEffect } from 'react';
 import { backend } from '@/lib/mock-backend';
 import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabase/client';
 
 export default function SettingsPage() {
   const { user, isLoading } = useAuth();
@@ -21,22 +22,45 @@ export default function SettingsPage() {
     if (!isLoading && !user) {
       router.push('/');
     }
-    if (user) {
-      setDisplayName(user.displayName);
-      setBio(user.bio);
-      setIsPrivate(user.isPrivate);
+    
+    async function fetchProfile() {
+      if (user) {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+          
+        if (data) {
+          setDisplayName(data.display_name || '');
+          setBio(data.bio || '');
+          setIsPrivate(data.is_private || false);
+        }
+      }
     }
+
+    fetchProfile();
   }, [user, isLoading, router]);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (user) {
-      backend.updateProfile({
-        displayName,
-        bio,
-        isPrivate
-      });
-      // Force reload to update context (in real app context would update automatically)
-      window.location.reload();
+      try {
+        const { error } = await supabase
+          .from('profiles')
+          .update({
+            display_name: displayName,
+            bio: bio,
+            is_private: isPrivate
+          })
+          .eq('id', user.id);
+
+        if (error) throw error;
+        
+        // Force reload to update context (in real app context would update automatically)
+        window.location.reload();
+      } catch (error) {
+        console.error('Error updating profile:', error);
+      }
     }
   };
 

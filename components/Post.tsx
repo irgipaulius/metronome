@@ -5,32 +5,20 @@ import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Heart, MessageCircle, Share2, Lock, Globe, Play } from 'lucide-react';
-import { useState, useEffect } from 'react';
-import { backend } from '@/lib/mock-backend';
+import { useState } from 'react';
 
 interface PostProps {
   post: PostType;
 }
 
 export function Post({ post }: PostProps) {
-  const [author, setAuthor] = useState<User | undefined>(undefined);
+  // In a real app with Supabase join, author is attached to post
+  // We need to extend the type or cast it
+  const author = (post as any).author as User;
   const [isLiked, setIsLiked] = useState(false);
   const [likesCount, setLikesCount] = useState(post.likes);
 
-  useEffect(() => {
-    // In a real app, this would be a data fetch or passed down from feed
-    const user = backend.getUser(post.authorId === 'user-1' ? 'jimi_hendrix' : post.authorId === 'user-2' ? 'mozart_wolfie' : 'secret_bass');
-    // Hacky fix for mock data ID mismatch, in real app IDs would match
-    // Let's just fetch by ID if I had a getUserById, but I only have getUser by username in mock
-    // I'll just iterate users in mock backend to find by ID for this component
-    // Actually, let's just use a helper here for the mock
-    const allUsers = [
-      { id: 'user-1', username: 'jimi_hendrix', displayName: 'Jimi Hendrix', avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400&h=400&fit=crop' },
-      { id: 'user-2', username: 'mozart_wolfie', displayName: 'Wolfgang Amadeus Mozart', avatarUrl: 'https://images.unsplash.com/photo-1633332755192-727a05c4013d?w=400&h=400&fit=crop' },
-      { id: 'user-3', username: 'secret_bass', displayName: 'Anonymous Bassist', avatarUrl: 'https://images.unsplash.com/photo-1527980965255-d3b416303d12?w=400&h=400&fit=crop' },
-    ];
-    setAuthor(allUsers.find(u => u.id === post.authorId) as User);
-  }, [post.authorId]);
+  // No need for useEffect fetch anymore as data comes joined
 
   const handleLike = () => {
     setIsLiked(!isLiked);

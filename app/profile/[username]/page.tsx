@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Loader2, MapPin, Link as LinkIcon, Calendar, Lock } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { supabase } from '@/lib/supabase/client';
 
 export default function ProfilePage() {
   const params = useParams();
@@ -20,15 +21,53 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Simulate data fetching
-    const user = backend.getUser(username);
-    if (user) {
-      setProfileUser(user);
-      const userPosts = backend.getUserPosts(username);
-      setPosts(userPosts);
+    async function fetchData() {
+      if (!username) return;
+
+      try {
+        // Fetch User Profile
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('username', username)
+          .single();
+
+        if (profileError) throw profileError;
+        
+        // Transform profile data to match User type (mock backend type)
+        // We need to map snake_case to camelCase or update types
+        const mappedUser: User = {
+          id: profile.id,
+          username: profile.username,
+          displayName: profile.display_name,
+          avatarUrl: profile.avatar_url,
+          bio: profile.bio,
+          isPrivate: profile.is_private,
+          followers: [], // TODO: Fetch followers count
+          following: [], // TODO: Fetch following count
+        };
+        
+        setProfileUser(mappedUser);
+
+        // Fetch User Posts
+        const { data: postsData, error: postsError } = await supabase
+          .from('posts')
+          .select('*')
+          .eq('author_id', profile.id)
+          .order('created_at', { ascending: false });
+
+        if (postsError) throw postsError;
+        setPosts(postsData as any);
+
+      } catch (error) {
+        console.error('Error fetching profile:', error);
+      } finally {
+        setLoading(false);
+      }
     }
-    setLoading(false);
-  }, [username, currentUser]); // Re-fetch if current user changes (for private post visibility)
+
+    fetchData();
+  }, [username, currentUser]);
 
   if (loading) {
     return (
