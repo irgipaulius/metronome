@@ -25,17 +25,16 @@ export default function ProfilePage() {
       if (!username) return;
 
       try {
-        // Fetch User Profile
-        const { data: profile, error: profileError } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('username', username)
-          .single();
+        const { data: { session } } = await supabase.auth.getSession();
+        const token = session?.access_token;
+        const headers = { Authorization: `Bearer ${token}` };
 
-        if (profileError) throw profileError;
+        // Fetch User Profile
+        const profileRes = await fetch(`/api/users/${username}`, { headers });
+        if (!profileRes.ok) throw new Error('Failed to fetch profile');
+        const profile = await profileRes.json();
         
         // Transform profile data to match User type (mock backend type)
-        // We need to map snake_case to camelCase or update types
         const mappedUser: User = {
           id: profile.id,
           username: profile.username,
@@ -50,14 +49,18 @@ export default function ProfilePage() {
         setProfileUser(mappedUser);
 
         // Fetch User Posts
-        const { data: postsData, error: postsError } = await supabase
-          .from('posts')
-          .select('*')
-          .eq('author_id', profile.id)
-          .order('created_at', { ascending: false });
+        const postsRes = await fetch(`/api/users/${username}/posts`, { headers });
+        if (!postsRes.ok) throw new Error('Failed to fetch posts');
+        const postsData = await postsRes.json();
+        
+        // We need to attach the author to the posts since the API might not join it
+        // Or we can update the API to join. For now, let's manually attach.
+        const postsWithAuthor = postsData.map((p: any) => ({
+          ...p,
+          author: profile // Attach the profile we just fetched
+        }));
 
-        if (postsError) throw postsError;
-        setPosts(postsData as any);
+        setPosts(postsWithAuthor);
 
       } catch (error) {
         console.error('Error fetching profile:', error);

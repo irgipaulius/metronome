@@ -13,19 +13,19 @@ export function Feed() {
   useEffect(() => {
     async function fetchPosts() {
       try {
-        const { data, error } = await supabase
-          .from('posts')
-          .select(`
-            *,
-            author:profiles(username, display_name, avatar_url)
-          `)
-          .order('created_at', { ascending: false });
+        const { data: { session } } = await supabase.auth.getSession();
+        const token = session?.access_token;
 
-        if (error) throw error;
+        const res = await fetch('/api/feed', {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+
+        if (!res.ok) throw new Error('Failed to fetch posts');
         
-        // Transform data to match Post type if needed, or update Post type
-        // For now, assuming the join returns author object correctly
-        setPosts(data as any);
+        const data = await res.json();
+        setPosts(data);
       } catch (error) {
         console.error('Failed to fetch posts:', error);
       } finally {

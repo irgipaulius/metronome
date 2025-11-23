@@ -23,12 +23,19 @@ export function Navbar() {
   useEffect(() => {
     async function fetchProfile() {
       if (user) {
-        const { data } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', user.id)
-          .single();
-        setProfile(data);
+        const { data: { session } } = await supabase.auth.getSession();
+        const token = session?.access_token;
+        
+        const res = await fetch('/api/me', {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+        
+        if (res.ok) {
+          const data = await res.json();
+          setProfile(data);
+        }
       } else {
         setProfile(null);
       }

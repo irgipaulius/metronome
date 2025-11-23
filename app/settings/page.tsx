@@ -25,13 +25,17 @@ export default function SettingsPage() {
     
     async function fetchProfile() {
       if (user) {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', user.id)
-          .single();
+        const { data: { session } } = await supabase.auth.getSession();
+        const token = session?.access_token;
+
+        const res = await fetch('/api/me', {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
           
-        if (data) {
+        if (res.ok) {
+          const data = await res.json();
           setDisplayName(data.display_name || '');
           setBio(data.bio || '');
           setIsPrivate(data.is_private || false);
@@ -45,16 +49,23 @@ export default function SettingsPage() {
   const handleSave = async () => {
     if (user) {
       try {
-        const { error } = await supabase
-          .from('profiles')
-          .update({
+        const { data: { session } } = await supabase.auth.getSession();
+        const token = session?.access_token;
+
+        const res = await fetch('/api/me', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({
             display_name: displayName,
             bio: bio,
             is_private: isPrivate
           })
-          .eq('id', user.id);
+        });
 
-        if (error) throw error;
+        if (!res.ok) throw new Error('Failed to update profile');
         
         // Force reload to update context (in real app context would update automatically)
         window.location.reload();
